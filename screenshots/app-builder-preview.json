@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "JackCumber Line",
+      "hasCanvas": true,
+      "bodyTextLen": 753,
+      "bodyTextHash": "3f912c854e8e24ed124d78da21d1fa9e99f2500e4496329a6e94423a307bc0c0",
+      "bodyTextPrefix": "JackCumber Line BRICK CITY TRAIN Stations 0 / 8 0 / 0 0 00:00.0 ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "JackCumber Line",
+      "hasCanvas": true,
+      "bodyTextLen": 744,
+      "bodyTextHash": "7e1d8170ff2cf568ab96c93b47570147ade439f1849e723fd85826e54f8d9366",
+      "bodyTextPrefix": "JackCumber Line BRICK CITY TRAIN Stations 0 / 8 0 / 0 0 00:00.0 ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

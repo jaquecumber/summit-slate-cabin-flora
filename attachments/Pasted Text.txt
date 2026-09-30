@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEGO City Train Simulator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a24;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 1000px;
+            background: #252634;
+            border-radius: 12px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 3px solid #3b3d54;
+        }
+
+        header {
+            background: #0055bf; /* LEGO Blue */
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 4px solid #ffcf00; /* LEGO Yellow */
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: #e3000b; /* LEGO Red */
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        #scoreboard {
+            display: flex;
+            gap: 16px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .score-item span {
+            color: #ffcf00;
+        }
+
+        canvas {
+            background: #38bdf8;
+            display: block;
+            width: 100%;
+            height: 320px;
+        }
+
+        #dashboard {
+            display: grid;
+            grid-template-columns: 220px 1fr 200px;
+            gap: 15px;
+            padding: 15px;
+            background: #181922;
+        }
+
+        .panel {
+            background: #252634;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #3b3d54;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #8f93b0;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .speed-display {
+            font-size: 38px;
+            font-weight: 900;
+            color: #ffcf00;
+            font-family: monospace;
+            line-height: 1;
+        }
+
+        .speed-unit {
+            font-size: 12px;
+            color: #8f93b0;
+            margin-top: 4px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            height: 100%;
+        }
+
+        .btn {
+            background: #3b3d54;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 10px;
+            box-shadow: 0 4px 0 #222431;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #222431;
+        }
+
+        .btn-brake { background: #d97706; color: #fff; box-shadow: 0 4px 0 #92400e; }
+        .btn-e-brake { background: #e3000b; color: #fff; box-shadow: 0 4px 0 #990007; }
+        .btn-door { background: #2563eb; color: #fff; box-shadow: 0 4px 0 #1d4ed8; }
+        .btn-dir { background: #4b5563; color: #fff; box-shadow: 0 4px 0 #374151; }
+        .btn-light { background: #ca8a04; color: #fff; box-shadow: 0 4px 0 #854d0e; }
+
+        .btn.active {
+            filter: brightness(1.2);
+            border: 2px solid #fff;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            gap: 15px;
+            padding: 0 10px;
+        }
+
+        input[type=range] {
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
+            width: 30px;
+            height: 100px;
+            padding: 0 5px;
+            cursor: pointer;
+        }
+
+        .station-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        #message-log {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid #ffcf00;
+            color: #ffcf00;
+            font-weight: bold;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .controls-hint {
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+
+        /* Modal Summary Overlay */
+        #summary-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: #252634;
+            border: 3px solid #ffcf00;
+            border-radius: 12px;
+            padding: 24px;
+            width: 500px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .modal-card h2 {
+            color: #ffcf00;
+            margin-top: 0;
+            font-size: 24px;
+            border-bottom: 2px solid #3b3d54;
+            padding-bottom: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .total-score-row {
+            border-top: 2px dashed #ffcf00;
+            padding-top: 10px;
+            margin-top: 12px;
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .total-score-value {
+            color: #ffcf00;
+            font-size: 22px;
+        }
+
+        .restart-btn {
+            margin-top: 15px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .restart-btn:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <h1>LEGO City Train Simulator <span class="badge">JackCumber Line</span></h1>
+        <div id="scoreboard">
+            <div class="score-item">Station Points: <span id="station-pts-val">0 / 8</span></div>
+            <div class="score-item">On Board: <span id="onboard-val">0</span></div>
+            <div class="score-item">Delivered: <span id="passengers-val">0</span></div>
+            <div class="score-item">Time: <span id="stopwatch-val">00:00.0</span></div>
+        </div>
+    </header>
+
+    <div id="message-log">Welcome Conductor! Drive to stations or head straight to Grand Terminal!</div>
+
+    <canvas id="trackCanvas" width="1000" height="320"></canvas>
+
+    <div id="dashboard">
+        <!-- Speed & Dynamics -->
+        <div class="panel">
+            <div class="panel-title">Instrument Panel</div>
+            <div class="gauge-container">
+                <div class="speed-display" id="speed-val">0</div>
+                <div class="speed-unit">KM/H (Speed Level)</div>
+            </div>
+            <div class="station-info">
+                <div>Next: <b id="next-station-name" style="color:#ffcf00;">Station 1</b></div>
+                <div>Distance: <b id="station-dist">0m</b></div>
+            </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="panel">
+            <div class="panel-title">Train Controls</div>
+            <div class="controls-grid">
+                <button class="btn btn-brake" id="btn-brake" title="Hotkey: Down Arrow / S">
+                    🛑 BRAKE
+                </button>
+                <button class="btn btn-e-brake" id="btn-ebrake" title="Hotkey: Spacebar">
+                    ⚠️ E-BRAKE
+                </button>
+                <button class="btn btn-light active" id="btn-light" title="Hotkey: L">
+                    💡 LIGHTS: ON
+                </button>
+                <button class="btn btn-door" id="btn-door" title="Hotkey: D">
+                    🚪 DOORS
+                </button>
+                <button class="btn btn-dir" id="btn-dir" style="grid-column: span 2;" title="Hotkey: R">
+                    🔄 DIR: FWD
+                </button>
+            </div>
+        </div>
+
+        <!-- Throttle Control -->
+        <div class="panel">
+            <div class="panel-title">10-Speed Throttle</div>
+            <div class="slider-wrapper">
+                <input type="range" id="throttle" min="0" max="10" value="0" step="1">
+                <div style="display:flex; flex-direction:column; justify-content:space-between; height:100px; font-weight:bold; font-size:12px;">
+                    <span>10 MAX</span>
+                    <span>5 MID</span>
+                    <span>0 IDLE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terminal Score Summary Modal -->
+    <div id="summary-modal">
+        <div class="modal-card">
+            <h2>🏁 Route Completed!</h2>
+            <div class="stat-row"><span>Total Travel Time:</span><span class="stat-value" id="res-time">00:00.0</span></div>
+            <div class="stat-row"><span>Stations Visited:</span><span class="stat-value" id="res-points">0 / 8 (+0 pts)</span></div>
+            <div class="stat-row"><span>Skipped Stations Penalty:</span><span class="stat-value" style="color:#ef4444;" id="res-skipped-penalty">-0 pts</span></div>
+            <div class="stat-row"><span>Passengers Delivered:</span><span class="stat-value" id="res-passengers">0</span></div>
+            <div class="stat-row"><span>Hard Accel/Brake Penalty:</span><span class="stat-value" id="res-accel-penalty">0 pts</span></div>
+            <div class="stat-row"><span>Reversals Penalty:</span><span class="stat-value" id="res-reversal-penalty">0 pts</span></div>
+            <div class="stat-row"><span>Mid-Track Stop Penalty:</span><span class="stat-value" id="res-midstop-penalty">0 pts</span></div>
+            <div class="stat-row"><span>Comfort Score:</span><span class="stat-value" id="res-comfort">100 / 100</span></div>
+            <div class="stat-row total-score-row"><span>TOTAL SCORE:</span><span class="total-score-value" id="res-total-score">0 pts</span></div>
+            <button class="restart-btn" onclick="location.reload()">Drive Route Again</button>
+        </div>
+    </div>
+</div>
+<div class="controls-hint">Controls: [Up/Down] Throttle | [Space] E-Brake | [L] Lights | [D] Doors | [R] Reverse</div>
+
+<script>
+    // Audio Context Setup for Synthesized Sounds
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playBrakeSound() {
+        if (!audioCtx) return;
+        const bufferSize = audioCtx.sampleRate * 0.2;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2800;
+        filter.Q.value = 6;
+
+        const gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        noise.start();
+    }
+
+    function playChimeSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.12); // E5
+
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    // Canvas Setup
+    const canvas = document.getElementById('trackCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Route Stations Configuration: 8 Intermediate Stations + 1 Final Terminal Station
+    const stations = [
+        { name: "1. Brick Central", pos: 600, passengers: 5, visited: false },
+        { name: "2. City Park", pos: 1800, passengers: 6, visited: false },
+        { name: "3. Yellow Bridge", pos: 3000, passengers: 4, visited: false },
+        { name: "4. North Suburbs", pos: 4200, passengers: 5, visited: false },
+        { name: "5. River Crossing", pos: 5400, passengers: 7, visited: false },
+        { name: "6. East Plaza", pos: 6600, passengers: 4, visited: false },
+        { name: "7. Tech District", pos: 7800, passengers: 6, visited: false },
+        { name: "8. Harbor Bay", pos: 9000, passengers: 5, visited: false },
+        { name: "9. GRAND TERMINAL", pos: 10200, passengers: 0, visited: false, isTerminal: true }
+    ];
+
+    // Game Variables
+    let stationPoints = 0;
+    let passengersDelivered = 0;
+    let passengersOnBoard = 0;
+    let trainPos = 100;
+    let trainSpeed = 0;
+    let targetSpeed = 0;
+    let direction = 1; // 1 = Forward, -1 = Reverse
+    let doorsOpen = false;
+    let lightsOn = true;
+    let isEmergencyBraking = false;
+    let wheelRotation = 0;
+
+    // Comfort Metrics Tracking
+    let accelDeductions = 0;
+    let reversalCount = 0;
+    let midTrackStopCount = 0;
+    let wasStopped = false;
+    let prevThrottle = 0;
+
+    // Metrics & Performance
+    let startTime = null;
+    let elapsedTime = 0;
+    let timerRunning = true;
+    let routeFinished = false;
+
+    // Boarding helper
+    let boardingCooldown = 0;
+
+    // UI Elements
+    const speedValEl = document.getElementById('speed-val');
+    const stationPtsEl = document.getElementById('station-pts-val');
+    const onboardValEl = document.getElementById('onboard-val');
+    const passengersValEl = document.getElementById('passengers-val');
+    const stopwatchValEl = document.getElementById('stopwatch-val');
+    const nextStationEl = document.getElementById('next-station-name');
+    const stationDistEl = document.getElementById('station-dist');
+    const throttleEl = document.getElementById('throttle');
+    const btnBrake = document.getElementById('btn-brake');
+    const btnEBrake = document.getElementById('btn-ebrake');
+    const btnDoor = document.getElementById('btn-door');
+    const btnDir = document.getElementById('btn-dir');
+    const btnLight = document.getElementById('btn-light');
+    const msgLog = document.getElementById('message-log');
+
+    let logTimeout;
+    function showLog(msg) {
+        msgLog.innerText = msg;
+        msgLog.style.opacity = 1;
+        clearTimeout(logTimeout);
+        logTimeout = setTimeout(() => { msgLog.style.opacity = 0; }, 3000);
+    }
+
+    // Controls
+    throttleEl.addEventListener('input', (e) => {
+        initAudio();
+        if (doorsOpen) {
+            showLog("⚠️ Close doors before accelerating!");
+            throttleEl.value = 0;
+            return;
+        }
+        if (isEmergencyBraking || routeFinished) return;
+        const level = parseInt(e.target.value);
+
+        // Detect harsh throttle changes (> 3 levels at once)
+        if (Math.abs(level - prevThrottle) > 3) {
+            accelDeductions += 5;
+            showLog("⚠️ Jerky acceleration/deceleration! (-Comfort)");
+        }
+        prevThrottle = level;
+
+        targetSpeed = level * 6 * direction;
+    });
+
+    btnBrake.addEventListener('click', () => {
+        initAudio();
+        playBrakeSound();
+        const currentThrot = parseInt(throttleEl.value);
+        if (currentThrot >= 3) {
+            accelDeductions += 3;
+            showLog("⚠️ Heavy braking! (-Comfort)");
+        }
+        throttleEl.value = Math.max(0, currentThrot - 2);
+        prevThrottle = parseInt(throttleEl.value);
+        targetSpeed = (prevThrottle * 6) * direction;
+    });
+
+    btnEBrake.addEventListener('click', () => {
+        initAudio();
+        playBrakeSound();
+        isEmergencyBraking = true;
+        accelDeductions += 10;
+        throttleEl.value = 0;
+        prevThrottle = 0;
+        targetSpeed = 0;
+        btnEBrake.classList.add('active');
+        showLog("⚠️ EMERGENCY BRAKE ENGAGED! (-10 Comfort)");
+        setTimeout(() => {
+            isEmergencyBraking = false;
+            btnEBrake.classList.remove('active');
+        }, 1500);
+    });
+
+    btnDoor.addEventListener('click', () => {
+        initAudio();
+        if (Math.abs(trainSpeed) > 0.5) {
+            showLog("🛑 Cannot open doors while train is moving!");
+            return;
+        }
+
+        doorsOpen = !doorsOpen;
+        playChimeSound();
+        if (doorsOpen) {
+            btnDoor.innerText = "🚪 DOORS (OPEN)";
+            btnDoor.classList.add('active');
+            showLog("Doors Opened.");
+        } else {
+            btnDoor.innerText = "🚪 DOORS (CLOSED)";
+            btnDoor.classList.remove('active');
+            showLog("Doors Closed.");
+        }
+    });
+
+    btnDir.addEventListener('click', () => {
+        initAudio();
+        if (Math.abs(trainSpeed) > 0.5) {
+            showLog("🛑 Stop train fully before changing direction!");
+            return;
+        }
+        direction *= -1;
+        reversalCount++;
+        showLog("⚠️ Direction reversed! (-5 Comfort)");
+        btnDir.innerText = direction === 1 ? "🔄 DIR: FWD" : "🔄 DIR: REV";
+    });
+
+    btnLight.addEventListener('click', () => {
+        initAudio();
+        lightsOn = !lightsOn;
+        btnLight.innerText = lightsOn ? "💡 LIGHTS: ON" : "💡 LIGHTS: OFF";
+        if (lightsOn) btnLight.classList.add('active');
+        else btnLight.classList.remove('active');
+        showLog(lightsOn ? "Headlights turned ON" : "Headlights turned OFF");
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'w') {
+            throttleEl.value = Math.min(10, parseInt(throttleEl.value) + 1);
+            throttleEl.dispatchEvent(new Event('input'));
+        } else if (e.key === 'ArrowDown' || e.key === 's') {
+            btnBrake.click();
+        } else if (e.key === ' ') {
+            btnEBrake.click();
+        } else if (e.key.toLowerCase() === 'd') {
+            btnDoor.click();
+        } else if (e.key.toLowerCase() === 'r') {
+            btnDir.click();
+        } else if (e.key.toLowerCase() === 'l') {
+            btnLight.click();
+        }
+    });
+
+    // Formatting Stopwatch Time
+    function formatTime(ms) {
+        const totalSec = ms / 1000;
+        const min = Math.floor(totalSec / 60);
+        const sec = Math.floor(totalSec % 60);
+        const tenths = Math.floor((ms % 1000) / 100);
+        return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}.${tenths}`;
+    }
+
+    // Daytime Side-View Rendering
+    const groundY = 240;
+
+    function drawDaytimeBackground(cameraX) {
+        // Bright Daytime Sky
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Sun
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.arc(850, 60, 36, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Fluffy Clouds (Parallax 0.05)
+        ctx.fillStyle = '#ffffff';
+        [200, 600, 1100, 1600, 2200, 2800, 3500, 4200, 5000].forEach((cx, idx) => {
+            const screenX = cx - (cameraX * 0.05);
+            if (screenX > -150 && screenX < canvas.width + 150) {
+                const cy = 50 + (idx % 3) * 20;
+                ctx.beginPath();
+                ctx.arc(screenX, cy, 22, 0, Math.PI * 2);
+                ctx.arc(screenX + 25, cy - 10, 28, 0, Math.PI * 2);
+                ctx.arc(screenX + 55, cy, 22, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // Distant Green Hills (Parallax 0.15)
+        ctx.fillStyle = '#86efac';
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        for (let x = -200; x < canvas.width + 200; x += 100) {
+            const worldX = x + (cameraX * 0.15);
+            const height = 50 + Math.sin(worldX * 0.003) * 30 + Math.cos(worldX * 0.007) * 20;
+            ctx.lineTo(x, groundY - height);
+        }
+        ctx.lineTo(canvas.width, groundY);
+        ctx.fill();
+
+        // Midground Trees (Parallax 0.4)
+        for (let x = 0; x < 11000; x += 220) {
+            const screenX = x - (cameraX * 0.4);
+            if (screenX > -100 && screenX < canvas.width + 100) {
+                // Tree Trunk
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(screenX - 4, groundY - 60, 8, 60);
+                // Foliage
+                ctx.fillStyle = '#15803d';
+                ctx.beginPath();
+                ctx.arc(screenX, groundY - 80, 26, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#22c55e';
+                ctx.beginPath();
+                ctx.arc(screenX - 8, groundY - 88, 18, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+
+    function drawTrackAndScenery(cameraX) {
+        // Ground Layer
+        ctx.fillStyle = '#15803d';
+        ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+        // Track Bed Gravel
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(0, groundY - 8, canvas.width, 8);
+
+        // Ties & Overhead Catenary Poles
+        const startX = Math.floor((cameraX - 100) / 20) * 20;
+        for (let x = startX; x < cameraX + canvas.width + 100; x += 20) {
+            const screenX = x - cameraX;
+            // Wooden Ties
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(screenX - 4, groundY - 12, 8, 4);
+
+            // Overhead Poles
+            if (Math.abs(x) % 240 === 0) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillRect(screenX - 3, groundY - 120, 6, 110);
+                ctx.fillRect(screenX - 3, groundY - 120, 40, 5);
+            }
+        }
+
+        // Catenary Overhead Wire
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, groundY - 115);
+        ctx.lineTo(canvas.width, groundY - 115);
+        ctx.stroke();
+
+        // Steel Rail
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(0, groundY - 16, canvas.width, 4);
+    }
+
+    function drawStationsSideView(cameraX) {
+        stations.forEach((st) => {
+            const screenX = st.pos - cameraX;
+            if (screenX > -250 && screenX < canvas.width + 250) {
+                ctx.save();
+                ctx.translate(screenX, groundY - 16);
+
+                // Concrete Platform Base
+                ctx.fillStyle = st.isTerminal ? '#334155' : '#94a3b8';
+                ctx.fillRect(-150, -12, 300, 12);
+
+                // LEGO Yellow Safety Line
+                ctx.fillStyle = '#ffcf00';
+                ctx.fillRect(-150, -14, 300, 2);
+
+                // Canopy / Roof
+                ctx.fillStyle = st.isTerminal ? '#e3000b' : '#0055bf';
+                ctx.fillRect(-110, -80, 220, 10);
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(-90, -70, 8, 58);
+                ctx.fillRect(82, -70, 8, 58);
+
+                // Signboard
+                ctx.fillStyle = st.visited ? '#16a34a' : '#e3000b';
+                ctx.fillRect(-65, -100, 130, 18);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(st.name, 0, -87);
+
+                // Waiting Passengers
+                for (let p = 0; p < st.passengers; p++) {
+                    const px = -120 + p * 16;
+                    // Legs
+                    ctx.fillStyle = p % 2 === 0 ? '#1e3a8a' : '#991b1b';
+                    ctx.fillRect(px, -24, 7, 10);
+                    // Torso
+                    ctx.fillStyle = p % 2 === 0 ? '#ef4444' : '#3b82f6';
+                    ctx.fillRect(px - 1, -38, 9, 14);
+                    // Head
+                    ctx.fillStyle = '#ffcf00';
+                    ctx.beginPath();
+                    ctx.arc(px + 3.5, -42, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        });
+    }
+
+    function drawLegoCarriageSide(x, color, isFront, isRear) {
+        ctx.save();
+        ctx.translate(x, groundY - 16);
+
+        const w = 180;
+        const h = 55;
+
+        // Base Chassis
+        ctx.fillStyle = '#111827';
+        ctx.fillRect(-w/2, -12, w, 12);
+
+        // Wheels
+        [-w/2 + 30, w/2 - 30].forEach(bx => {
+            ctx.fillStyle = '#374151';
+            ctx.fillRect(bx - 18, -10, 36, 6);
+
+            [-10, 10].forEach(wx => {
+                ctx.save();
+                ctx.translate(bx + wx, -6);
+                ctx.rotate(wheelRotation);
+
+                ctx.fillStyle = '#9ca3af';
+                ctx.beginPath();
+                ctx.arc(0, 0, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#111827';
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#9ca3af';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-4, 0); ctx.lineTo(4, 0);
+                ctx.moveTo(0, -4); ctx.lineTo(0, 4);
+                ctx.stroke();
+
+                ctx.restore();
+            });
+        });
+
+        // Main Body Shell
+        ctx.fillStyle = color;
+        ctx.fillRect(-w/2 + 5, -12 - h, w - 10, h);
+
+        // LEGO Blue & White Decorative Stripes
+        ctx.fillStyle = '#0055bf';
+        ctx.fillRect(-w/2 + 5, -12 - h + 32, w - 10, 10);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-w/2 + 5, -12 - h + 28, w - 10, 4);
+
+        if (isFront || isRear) {
+            const dirMultiplier = isFront ? 1 : -1;
+            const noseX = (w/2 - 5) * dirMultiplier;
+
+            // Sloped Nose Cone
+            ctx.fillStyle = '#ffcf00';
+            ctx.beginPath();
+            ctx.moveTo(noseX, -12);
+            ctx.lineTo(noseX + (25 * dirMultiplier), -12);
+            ctx.lineTo(noseX + (10 * dirMultiplier), -12 - h + 15);
+            ctx.lineTo(noseX, -12 - h + 15);
+            ctx.closePath();
+            ctx.fill();
+
+            // Windshield
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.moveTo(noseX - (5 * dirMultiplier), -12 - h + 15);
+            ctx.lineTo(noseX + (12 * dirMultiplier), -12 - h + 15);
+            ctx.lineTo(noseX - (2 * dirMultiplier), -12 - h + 42);
+            ctx.lineTo(noseX - (20 * dirMultiplier), -12 - h + 42);
+            ctx.closePath();
+            ctx.fill();
+
+            // Headlight Glow & Beam
+            if (isFront) {
+                const hlX = noseX + 18;
+                const hlY = -20;
+
+                if (lightsOn) {
+                    // Light Beam Cone
+                    const grad = ctx.createLinearGradient(hlX, hlY, hlX + 220, hlY);
+                    grad.addColorStop(0, 'rgba(255, 253, 208, 0.8)');
+                    grad.addColorStop(1, 'rgba(255, 253, 208, 0)');
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(hlX, hlY);
+                    ctx.lineTo(hlX + 220, hlY - 35);
+                    ctx.lineTo(hlX + 220, hlY + 25);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Bright Bulb Center
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(hlX, hlY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#64748b';
+                    ctx.beginPath();
+                    ctx.arc(hlX, hlY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Passenger Coach Features
+        if (!isFront && !isRear) {
+            ctx.fillStyle = '#1e293b';
+            for (let wx = -w/2 + 25; wx <= w/2 - 35; wx += 30) {
+                ctx.fillRect(wx, -12 - h + 12, 20, 18);
+                // Glass Reflection
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.fillRect(wx + 2, -12 - h + 14, 6, 14);
+                ctx.fillStyle = '#1e293b';
+            }
+
+            // Visible Onboard Minifigures Inside Coach
+            const visibleMinifigs = Math.min(passengersOnBoard, 3);
+            for (let m = 0; m < visibleMinifigs; m++) {
+                const mx = -w/2 + 32 + (m * 30);
+                ctx.fillStyle = '#ffcf00'; // Yellow Head
+                ctx.beginPath();
+                ctx.arc(mx + 5, -12 - h + 22, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Door outlines
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-w/2 + 10, -12 - h + 5, 14, h - 5);
+            ctx.strokeRect(w/2 - 24, -12 - h + 5, 14, h - 5);
+            if (doorsOpen) {
+                ctx.fillStyle = '#ffcf00';
+                ctx.fillRect(-w/2 + 11, -12 - h + 6, 12, h - 7);
+            }
+        }
+
+        // Roof Studs & Pantograph
+        ctx.fillStyle = color;
+        for (let sx = -w/2 + 10; sx <= w/2 - 15; sx += 12) {
+            ctx.fillRect(sx, -12 - h - 3, 6, 3);
+        }
+
+        if (isFront) {
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-20, -12 - h);
+            ctx.lineTo(-10, -12 - h - 18);
+            ctx.lineTo(10, -12 - h - 18);
+            ctx.lineTo(20, -12 - h);
+            ctx.moveTo(-10, -12 - h - 18);
+            ctx.lineTo(0, -12 - h - 35);
+            ctx.lineTo(10, -12 - h - 18);
+            ctx.stroke();
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-12, -12 - h - 37, 24, 3);
+        }
+
+        // Coupler
+        ctx.fillStyle = '#374151';
+        ctx.fillRect(-w/2 - 8, -18, 10, 6);
+        ctx.fillRect(w/2, -18, 10, 6);
+
+        ctx.restore();
+    }
+
+    function drawTrainSideView(cameraX) {
+        const carSpacing = 190;
+        const trainX = trainPos - cameraX;
+
+        drawLegoCarriageSide(trainX - carSpacing * 2, '#ffcf00', false, true);
+        drawLegoCarriageSide(trainX - carSpacing, '#0055bf', false, false);
+        drawLegoCarriageSide(trainX, '#ffcf00', true, false);
+    }
+
+    function triggerTerminalFinish() {
+        timerRunning = false;
+        routeFinished = true;
+        throttleEl.value = 0;
+        targetSpeed = 0;
+
+        // Calculate Intermediate Stations Skipped
+        const skippedCount = stations.filter(s => !s.isTerminal && !s.visited).length;
+        const skippedPenalty = skippedCount * 150;
+
+        // Calculate Comfort Level Score (Base 100)
+        const accelPen = accelDeductions;
+        const revPen = reversalCount * 5;
+        const midStopPen = midTrackStopCount * 10;
+        const comfortScore = Math.max(0, 100 - accelPen - revPen - midStopPen);
+
+        // Calculate Combined Total Score
+        // Base Points: Station Points (100 pts each) + Passengers Delivered (20 pts each) + Comfort Score
+        const pointsBase = (stationPoints * 100) + (passengersDelivered * 20);
+        const timePenalty = Math.floor(elapsedTime / 1000); // 1 pt deduction per second
+        const totalScore = Math.max(0, pointsBase + comfortScore - timePenalty - skippedPenalty);
+
+        document.getElementById('res-time').innerText = formatTime(elapsedTime);
+        document.getElementById('res-points').innerText = `${stationPoints} / 8 (+${stationPoints * 100} pts)`;
+        document.getElementById('res-skipped-penalty').innerText = `-${skippedPenalty} pts (${skippedCount} skipped)`;
+        document.getElementById('res-passengers').innerText = `${passengersDelivered} (+${passengersDelivered * 20} pts)`;
+        document.getElementById('res-accel-penalty').innerText = `-${accelPen} pts`;
+        document.getElementById('res-reversal-penalty').innerText = `-${revPen} pts (${reversalCount}x)`;
+        document.getElementById('res-midstop-penalty').innerText = `-${midStopPen} pts (${midTrackStopCount}x)`;
+        document.getElementById('res-comfort').innerText = `${comfortScore} / 100`;
+        document.getElementById('res-total-score').innerText = `${totalScore} PTS`;
+
+        document.getElementById('summary-modal').style.display = 'flex';
+    }
+
+    // Main Loop
+    function update(timestamp) {
+        if (!startTime) startTime = timestamp;
+
+        if (timerRunning) {
+            elapsedTime = timestamp - startTime;
+            stopwatchValEl.innerText = formatTime(elapsedTime);
+        }
+
+        // Dynamics & Acceleration
+        if (isEmergencyBraking) {
+            trainSpeed += (0 - trainSpeed) * 0.15;
+        } else {
+            const accel = targetSpeed > trainSpeed ? 0.05 : 0.08;
+            trainSpeed += (targetSpeed - trainSpeed) * accel;
+        }
+
+        if (Math.abs(trainSpeed) < 0.01) trainSpeed = 0;
+
+        // Track Mid-Track Stops (stops away from any station platform)
+        const atStation = stations.some(s => Math.abs(s.pos - trainPos) < 100);
+        if (trainSpeed === 0 && !wasStopped) {
+            wasStopped = true;
+            if (!atStation && trainPos > 150 && !routeFinished) {
+                midTrackStopCount++;
+                showLog("⚠️ Stopped in middle of track! (-10 Comfort)");
+            }
+        } else if (Math.abs(trainSpeed) > 0.5) {
+            wasStopped = false;
+        }
+
+        // Position Updates
+        trainPos += trainSpeed * 0.4;
+        wheelRotation += (trainSpeed * 0.05);
+
+        // Track limits
+        if (trainPos < 0) trainPos = 0;
+
+        // Camera Tracking Centered on Engine
+        const cameraX = trainPos - 400;
+
+        speedValEl.innerText = Math.round(Math.abs(trainSpeed));
+        onboardValEl.innerText = passengersOnBoard;
+        passengersValEl.innerText = passengersDelivered;
+        stationPtsEl.innerText = `${stationPoints} / 8`;
+
+        // Station Proximity & Boarding
+        let nextSt = stations.find(s => s.pos > trainPos - 50) || stations[stations.length - 1];
+        let dist = Math.max(0, nextSt.pos - trainPos);
+
+        nextStationEl.innerText = nextSt.name;
+        stationDistEl.innerText = `${Math.round(dist)}m`;
+
+        const currentStation = stations.find(s => Math.abs(s.pos - trainPos) < 60);
+
+        if (currentStation && Math.abs(trainSpeed) < 0.2 && doorsOpen) {
+            boardingCooldown++;
+
+            // Award 1 Station Point max per station stop
+            if (!currentStation.visited && !currentStation.isTerminal) {
+                currentStation.visited = true;
+                stationPoints++;
+                showLog(`⭐ +1 Station Point earned at ${currentStation.name}!`);
+            }
+
+            // Passenger Boarding / Offloading Logic
+            if (boardingCooldown % 25 === 0) {
+                if (currentStation.isTerminal) {
+                    // Disembark all at Grand Terminal
+                    if (passengersOnBoard > 0) {
+                        passengersDelivered += passengersOnBoard;
+                        showLog(`🎉 All ${passengersOnBoard} passengers delivered to Grand Terminal!`);
+                        passengersOnBoard = 0;
+                        playChimeSound();
+                        setTimeout(triggerTerminalFinish, 1200);
+                    } else {
+                        triggerTerminalFinish();
+                    }
+                } else if (currentStation.passengers > 0) {
+                    // Board passengers onto train
+                    currentStation.passengers--;
+                    passengersOnBoard++;
+                    playChimeSound();
+                    showLog(`😃 Passenger boarded! (${currentStation.passengers} left at station)`);
+                }
+            }
+        } else {
+            boardingCooldown = 0;
+        }
+
+        // Render Canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawDaytimeBackground(cameraX);
+        drawTrackAndScenery(cameraX);
+        drawStationsSideView(cameraX);
+        drawTrainSideView(cameraX);
+
+        requestAnimationFrame(update);
+    }
+
+    requestAnimationFrame(update);
+</script>
+
+</body>
+</html>
